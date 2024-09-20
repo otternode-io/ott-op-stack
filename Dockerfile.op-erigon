@@ -1,0 +1,60 @@
+FROM docker.io/library/golang:1.21-alpine3.17 AS builder
+RUN apk --no-cache add build-base linux-headers git bash ca-certificates libstdc++
+
+WORKDIR /app
+
+ENV REPO=https://github.com/testinprod-io/op-erigon.git
+ENV VERSION=v2.60.8
+ENV COMMIT=782c79d601f6f32ecfb7cdf313d3e76e48819e8e
+RUN git clone $REPO  --single-branch . && \
+    git switch -c branch-$VERSION && \
+    bash -c '[ "$(git rev-parse HEAD)" = "$COMMIT" ]'
+
+#ADD go.mod go.mod
+#ADD go.sum go.sum
+#ADD erigon-lib/go.mod erigon-lib/go.mod
+#ADD erigon-lib/go.sum erigon-lib/go.sum
+
+RUN go mod download
+#ADD . .
+
+RUN --mount=type=cache,target=/root/.cache \
+    --mount=type=cache,target=/tmp/go-build \
+    --mount=type=cache,target=/go/pkg/mod \
+    make BUILD_TAGS=nosqlite,noboltdb,nosilkworm all
+
+
+FROM docker.io/library/alpine:3.17
+
+# install required runtime libs, along with some helpers for debugging
+RUN apk add --no-cache ca-certificates libstdc++ tzdata
+RUN apk add --no-cache curl jq bind-tools
+
+# Setup user and group
+#
+# from the perspective of the container, uid=1000, gid=1000 is a sensible choice
+# (mimicking Ubuntu Server), but if caller creates a .env (example in repo root),
+# these defaults will get overridden when make calls docker-compose
+ARG UID=1000
+ARG GID=1000
+RUN adduser -D -u $UID -g $GID erigon
+USER erigon
+RUN mkdir -p ~/.local/share/erigon
+
+COPY --from=builder /app/build/bin/downloader /usr/local/bin/downloader
+COPY --from=builder /app/build/bin/erigon /usr/local/bin/erigon
+COPY --from=builder /app/build/bin/evm /usr/local/bin/evm
+COPY --from=builder /app/build/bin/hack /usr/local/bin/hack
+COPY --from=builder /app/build/bin/integration /usr/local/bin/integration
+COPY --from=builder /app/build/bin/observer /usr/local/bin/observer
+COPY --from=builder /app/build/bin/pics /usr/local/bin/pics
+COPY --from=builder /app/build/bin/rpcdaemon /usr/local/bin/rpcdaemon
+COPY --from=builder /app/build/bin/rpctest /usr/local/bin/rpctest
+COPY --from=builder /app/build/bin/sentinel /usr/local/bin/sentinel
+COPY --from=builder /app/build/bin/sentry /usr/local/bin/sentry
+COPY --from=builder /app/build/bin/state /usr/local/bin/state
+COPY --from=builder /app/build/bin/txpool /usr/local/bin/txpool
+COPY --from=builder /app/build/bin/verkle /usr/local/bin/verkle
+COPY --from=builder /app/build/bin/caplin /usr/local/bin/caplin
+
+ENTRYPOINT ["erigon"]
