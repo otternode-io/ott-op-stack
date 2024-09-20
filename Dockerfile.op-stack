@@ -12,15 +12,22 @@ RUN git clone $REPO --branch op-node/$VERSION --single-branch . && \
 RUN cd op-node && \
     make VERSION=$VERSION op-node
 
+
+RUN cd op-batcher && \
+    make VERSION=$VERSION op-batcher
+
+RUN cd op-proposer && \
+    make VERSION=$VERSION op-proposer
+
+
 FROM ubuntu:22.04
 
 RUN apt-get update && \
     apt-get install -y jq curl  && \
     rm -rf /var/lib/apt/lists
-RUN mkdir -p /var/log/supervisor
 
 WORKDIR /app
 
 COPY --from=op /app/op-node/bin/op-node ./
-COPY --from=geth /app/build/bin/geth ./
-
+COPY --from=op /app/op-batcher/bin/op-batcher ./
+COPY --from=op /app/op-proposer/bin/op-proposer ./
