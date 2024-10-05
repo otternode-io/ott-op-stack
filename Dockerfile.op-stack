@@ -19,6 +19,9 @@ RUN cd op-batcher && \
 RUN cd op-proposer && \
     make VERSION=$VERSION op-proposer
 
+RUN cd op-alt-da && \
+    make VERSION=$VERSION da-server
+
 
 FROM golang:1.21 AS geth
 
@@ -44,4 +47,5 @@ WORKDIR /app
 COPY --from=op /app/op-node/bin/op-node ./
 COPY --from=op /app/op-batcher/bin/op-batcher ./
 COPY --from=op /app/op-proposer/bin/op-proposer ./
+COPY --from=op /app/op-alt-da/bin/da-server ./
 COPY --from=geth /app/build/bin/geth ./
