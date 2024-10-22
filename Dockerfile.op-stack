@@ -1,4 +1,4 @@
-FROM golang:1.21 AS op
+FROM golang:1.23 AS op
 
 WORKDIR /app
 
@@ -23,7 +23,7 @@ RUN cd op-alt-da && \
     make VERSION=$VERSION da-server
 
 
-FROM golang:1.21 AS geth
+FROM golang:1.23 AS geth
 
 WORKDIR /app
 
