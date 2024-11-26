@@ -11,6 +11,9 @@ RUN git clone $REPO --branch op-node/$VERSION --single-branch . && \
 
 RUN make VERSION=$VERSION op-node op-batcher op-proposer
 
+RUN cd op-alt-da && \
+    make VERSION=$VERSION da-server
+
 FROM rust:1.82 AS reth
 
 ARG FEATURES=jemalloc,asm-keccak,optimism
@@ -37,6 +40,7 @@ RUN mkdir -p /var/log/supervisor
 
 WORKDIR /app
 
+COPY --from=op /app/op-alt-da/bin/da-server ./
 COPY --from=op /app/op-node/bin/op-node ./
 COPY --from=op /app/op-batcher/bin/op-batcher ./
 COPY --from=op /app/op-proposer/bin/op-proposer ./
