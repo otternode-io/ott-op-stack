@@ -9,8 +9,7 @@ RUN git clone $REPO --branch op-node/$VERSION --single-branch . && \
     git switch -c branch-$VERSION && \
     bash -c '[ "$(git rev-parse HEAD)" = "$COMMIT" ]'
 
-RUN cd op-node && \
-    make VERSION=$VERSION op-node op-batcher op-proposer
+RUN make VERSION=$VERSION op-node op-batcher op-proposer
 
 FROM rust:1.82 AS reth
 
