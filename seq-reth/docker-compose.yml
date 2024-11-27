@@ -1,0 +1,95 @@
+services:
+  da-server:
+    image:  ghcr.io/otternode-io/ott-op-stack-193:latest
+    command: >
+      /app/da-server
+      --s3.bucket=jbcl2-da
+      --s3.endpoint=b39d91b4579b45c988fc9e31ef98fad1.eu.r2.cloudflarestorage.com
+      --s3.access-key-id=xx
+      --s3.access-key-secret=xx
+      --addr=0.0.0.0
+      --port=3100
+      --log.level=debug
+      --generic-commitment="false"
+
+  op-reth: 
+    image:  ghcr.io/otternode-io/ott-op-stack-193:latest
+    user: root
+    ports:
+      - 9545:8545       # RPC
+      - 9546:8546       # RPC
+      - 30301:30301
+    entrypoint: /op-reth-entrypoint
+    volumes:
+        - ./data/op-reth:/datadir
+        - ../config:/config
+        - ./op-reth-entrypoint:/op-reth-entrypoint
+    env_file:
+      - .env
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
+
+  op-node: 
+    image:  ghcr.io/otternode-io/ott-op-stack-193:latest
+    user: root
+    depends_on:
+      - op-reth
+#    ports:
+#      - 7545:8547     # RPC
+#      - 9222:9222     # P2P TCP
+#      - 9222:9222/udp # P2P UDP
+#      - 7300:7300     # metrics
+#      - 6060:6060     # pprof
+    entrypoint: /op-node-entrypoint
+    volumes:
+        - ../config:/config
+        - ./op-node-entrypoint:/op-node-entrypoint
+        - ./data:/data
+        - ./data/op_log:/op_log
+    env_file:
+      - .env
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
+
+  op-batcher:
+    image:  ghcr.io/otternode-io/ott-op-stack-193:latest
+    user: root
+    depends_on:
+      - op-reth
+      - op-node
+    ports:
+      - 8548:8548
+    entrypoint: /op-batcher-entrypoint
+    volumes:
+        - ../config:/config
+        - ./op-batcher-entrypoint:/op-batcher-entrypoint
+    env_file:
+      - .env
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
+
+  op-proposer:
+    image:  ghcr.io/otternode-io/ott-op-stack-193:latest
+    user: root
+    entrypoint: /op-proposer-entrypoint
+    restart: always
+    volumes:
+        - ../config:/config
+        - ./op-proposer-entrypoint:/op-proposer-entrypoint
+    env_file:
+      - .env
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
+

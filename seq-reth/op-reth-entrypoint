@@ -1,0 +1,20 @@
+#!/bin/sh
+set -eu
+/app/op-reth init   --datadir /datadir --chain /config/genesis.json
+exec /app/op-reth node --datadir /datadir \
+   --chain /config/genesis.json \
+  --http \
+  --http.corsdomain="*" \
+  --http.addr=0.0.0.0 \
+  --http.api=all \
+  --ws \
+  --ws.addr=0.0.0.0 \
+  --ws.port=8546 \
+  --ws.origins="*" \
+  --ws.api=all \
+  --authrpc.addr=0.0.0.0 \
+  --authrpc.port=8551 \
+  --authrpc.jwtsecret=/config/jwt.txt \
+  --rpc.eth-proof-window=302400  \
+  --port=30301
+

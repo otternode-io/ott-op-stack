@@ -1,0 +1,26 @@
+#!/bin/sh
+set -eu
+exec /app/op-node --l2=http://op-reth:8551 \
+  --l2.jwt-secret=/config/jwt.txt \
+  --sequencer.enabled \
+  --sequencer.l1-confs=5 \
+  --verifier.l1-confs=4 \
+  --rollup.config=/config/rollup.json \
+  --rpc.addr=0.0.0.0 \
+  --rpc.port=8547 \
+  --rpc.enable-admin \
+  --p2p.sequencer.key=$GS_SEQUENCER_PRIVATE_KEY \
+  --l1=$L1_RPC_URL \
+  --l1.rpckind=$L1_RPC_KIND \
+  --l1.beacon.ignore=true \
+  --p2p.listen.ip=0.0.0.0 \
+  --p2p.listen.tcp=9222 \
+  --p2p.listen.udp=9222 \
+  --p2p.scoring.peers=light \
+  --p2p.ban.peers=true \
+  --snapshotlog.file=/op_log/snapshot.log \
+  --p2p.priv.path=/config/p2p-node-key \
+  --safedb.path=/data/node-db \
+  --altda.enabled="true" \
+  --altda.da-service="false" \
+  --altda.da-server=http://da-server:3100
