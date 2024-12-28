@@ -1,0 +1,32 @@
+FROM golang:1.21.3 AS op
+
+WORKDIR /app
+
+ENV REPO=https://github.com/otternode-io/optimism-7702.git
+ENV VERSION=v1.0b
+ENV COMMIT=4c4ac72dd7b74289007f883ad44d4cb99e10ae9e
+RUN git clone $REPO . && \
+    git switch -c branch-$VERSION && \
+    bash -c '[ "$(git rev-parse HEAD)" = "$COMMIT" ]'
+RUN go mod tidy
+RUN make VERSION=$VERSION op-node op-batcher op-proposer
+
+RUN cd op-alt-da && \
+    make VERSION=$VERSION da-server
+
+FROM ghcr.io/ithacaxyz/odyssey:v0.2.7 AS reth
+
+
+FROM ubuntu:22.04
+
+RUN apt-get update && \
+    apt-get install -y jq curl  && \
+    rm -rf /var/lib/apt/lists
+
+WORKDIR /app
+
+COPY --from=op /app/op-alt-da/bin/da-server ./
+COPY --from=op /app/op-node/bin/op-node ./
+COPY --from=op /app/op-batcher/bin/op-batcher ./
+COPY --from=op /app/op-proposer/bin/op-proposer ./
+COPY --from=reth /usr/local/bin/odyssey ./
