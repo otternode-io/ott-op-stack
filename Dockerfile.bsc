@@ -1,0 +1,29 @@
+FROM golang:1.22-bookworm AS op
+
+WORKDIR /app
+
+ENV REPO=https://github.com/dome/optimism
+ENV VERSION=v1.12.1
+ENV COMMIT=d3b8eadd80457c74d9c4251948ac11e8d14a9c9c
+RUN git clone $REPO --branch bsc --single-branch .
+
+COPY ./just /usr/local/bin
+
+RUN make VERSION=$VERSION op-node op-batcher op-proposer
+
+RUN cd op-alt-da && \
+    make VERSION=$VERSION da-server
+
+
+FROM ubuntu:22.04
+
+RUN apt-get update && \
+    apt-get install -y jq curl supervisor && \
+    rm -rf /var/lib/apt/lists
+
+WORKDIR /app
+
+COPY --from=op /app/op-alt-da/bin/da-server ./
+COPY --from=op /app/op-node/bin/op-node ./
+COPY --from=op /app/op-batcher/bin/op-batcher ./
+COPY --from=op /app/op-proposer/bin/op-proposer ./
