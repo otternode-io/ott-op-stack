@@ -2,10 +2,10 @@ FROM golang:1.22-bookworm AS op
 
 WORKDIR /app
 
-ENV REPO=https://github.com/ethereum-optimism/optimism.git
+ENV REPO=https://github.com/dome/optimism
 ENV VERSION=v1.13.0
 ENV COMMIT=5f003211aed7469eed7df666291a62c025d1c46c
-RUN git clone $REPO  --single-branch .
+RUN git clone $REPO --branch bsc --single-branch .
 
 COPY ./just /usr/local/bin
 
